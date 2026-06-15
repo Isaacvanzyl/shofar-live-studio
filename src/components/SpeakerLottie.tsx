@@ -46,15 +46,21 @@ export default function SpeakerLottie({ settings, staticFrame }: Props) {
     anim.setSubframe(false)
 
     const onReady = () => {
+      if (fired) return
       fired = true
-      if (staticFrame != null) anim.goToAndStop(staticFrame, true)
-      else { anim.goToAndStop(0, true); anim.play() }
+      if (staticFrame != null) {
+        anim.goToAndStop(staticFrame, true)
+      } else {
+        anim.goToAndStop(200, true)
+        anim.play()
+      }
     }
     anim.addEventListener('DOMLoaded', onReady)
-    if (!fired && anim.isLoaded) onReady()
+    // Fallback: if DOMLoaded already fired synchronously
+    setTimeout(onReady, 0)
 
     animRef.current = anim
-    return () => { animRef.current?.destroy() }
+    return () => { anim.destroy() }
   }, [settings.title, settings.speaker, settings.location, staticFrame])
 
   return (
