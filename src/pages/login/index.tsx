@@ -17,7 +17,7 @@ export default function LoginPage() {
   // Redirect if already logged in
   useEffect(() => {
     if (!loading && user && profile) {
-      navigate(profile.role === 'admin' ? '/admin' : '/control', { replace: true })
+      navigate(profile.role === 'admin' ? '/admin' : '/control/screens', { replace: true })
     }
   }, [user, profile, loading, navigate])
 

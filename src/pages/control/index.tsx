@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ControlProvider, useControl } from './ControlContext'
 import { useAuth } from '../../contexts/AuthContext'
 import PreviewCanvas from '../../components/canvas/PreviewCanvas'
@@ -102,11 +102,20 @@ function readScreenPresets(): import('../../types').ScreenPresetEntry[] {
   try { return JSON.parse(localStorage.getItem(SCREEN_PRESETS_KEY) ?? '[]') } catch { return [] }
 }
 
-function ScreensGallery({ onEdit }: { onEdit: (id: string | null) => void }) {
-  const { lottieSettings } = useControl()
+function ScreensGallery({ onEdit }: { onEdit: (id: string | null, isNew?: boolean) => void }) {
+  const { lottieSettings, pushScreenPreset } = useControl()
   const [presets, setPresets] = useState(readScreenPresets)
 
   useEffect(() => { setPresets(readScreenPresets()) }, [])
+
+  const handleAddNew = async () => {
+    // Duplicate current welcome lottie settings into a new preset
+    const id = `screen_${Date.now()}`
+    const name = `Screen ${presets.length + 2}`
+    await pushScreenPreset(id, { ...lottieSettings })
+    setPresets(readScreenPresets())
+    onEdit(id, true)
+  }
 
   return (
     <div className="gallery-page">
@@ -149,15 +158,36 @@ function ScreensGallery({ onEdit }: { onEdit: (id: string | null) => void }) {
           </div>
         ))}
 
-        {/* Add new */}
-        <div className="screen-card" style={{ cursor: 'pointer', opacity: 0.6 }} onClick={() => onEdit(null)}>
+        {/* Add new — duplicates current welcome */}
+        <div className="screen-card screen-card-add" onClick={handleAddNew}>
           <div className="screen-thumb" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--surf2)' }}>
             <span className="msym" style={{ fontSize: 36, color: 'var(--text-3)' }}>add</span>
           </div>
           <div className="screen-card-info">
             <div className="screen-card-name">New screen</div>
-            <div className="screen-card-desc">Save current content as a new version</div>
+            <div className="screen-card-desc">Duplicates current welcome as a starting point</div>
           </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Unsaved changes dialog ────────────────────────────────────────────────────
+
+function UnsavedDialog({ onSave, onDiscard, onCancel }: { onSave: () => void; onDiscard: () => void; onCancel: () => void }) {
+  return (
+    <div className="unsaved-overlay" onClick={onCancel}>
+      <div className="unsaved-dialog" onClick={e => e.stopPropagation()}>
+        <div className="unsaved-icon">
+          <span className="msym" style={{ fontSize: 24, color: '#f59e0b' }}>warning</span>
+        </div>
+        <h3 className="unsaved-title">Unsaved changes</h3>
+        <p className="unsaved-body">You've made edits that haven't been saved yet. What would you like to do?</p>
+        <div className="unsaved-actions">
+          <button className="unsaved-btn unsaved-discard" onClick={onDiscard}>Discard changes</button>
+          <button className="unsaved-btn unsaved-cancel" onClick={onCancel}>Keep editing</button>
+          <button className="unsaved-btn unsaved-save" onClick={onSave}>Save &amp; exit</button>
         </div>
       </div>
     </div>
@@ -166,21 +196,61 @@ function ScreensGallery({ onEdit }: { onEdit: (id: string | null) => void }) {
 
 // ── Screens Editor (full 3-column canvas editor) ──────────────────────────────
 
-function ScreensEditor({ onBack, initialPresetId }: { onBack: () => void; initialPresetId: string | null }) {
+function ScreensEditor({ onBack, initialPresetId, isNew }: { onBack: () => void; initialPresetId: string | null; isNew?: boolean }) {
+  const [dirty, setDirty] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
+  const [showTip, setShowTip] = useState(!!isNew)
+  const saveRef = useRef<(() => void) | null>(null)
+
+  const handleBack = () => {
+    if (dirty) { setShowConfirm(true); return }
+    onBack()
+  }
+
+  const handleDiscard = () => { setShowConfirm(false); onBack() }
+  const handleSave = () => { saveRef.current?.(); setShowConfirm(false); onBack() }
+
   return (
     <>
+      {showConfirm && (
+        <UnsavedDialog
+          onSave={handleSave}
+          onDiscard={handleDiscard}
+          onCancel={() => setShowConfirm(false)}
+        />
+      )}
+
       <div className="editor-breadcrumb">
-        <button className="breadcrumb-back" onClick={onBack}>
+        <button className="breadcrumb-back" onClick={handleBack}>
           <span className="msym" style={{ fontSize: 15 }}>arrow_back</span>
           Screens
         </button>
         <span style={{ color: 'var(--text-3)' }}>/</span>
-        <span className="breadcrumb-screen">Welcome</span>
+        <span className="breadcrumb-screen">
+          {initialPresetId ? 'Custom Screen' : 'Welcome'}
+          {dirty && <span style={{ color: 'var(--accent)', marginLeft: 6 }}>•</span>}
+        </span>
       </div>
+
+      {showTip && (
+        <div className="editor-tip">
+          <span className="msym" style={{ fontSize: 16, color: '#f59e0b' }}>info</span>
+          <span>This is a copy of your Welcome screen — customise it, then hit <strong>Save</strong> in the right panel before leaving.</span>
+          <button className="editor-tip-close" onClick={() => setShowTip(false)}>
+            <span className="msym" style={{ fontSize: 14 }}>close</span>
+          </button>
+        </div>
+      )}
 
       <div className="editor-body" style={{ gridTemplateColumns: '1fr 264px' }}>
         <PreviewCanvas />
-        <div className="editor-right"><ScreensRight initialPresetId={initialPresetId} /></div>
+        <div className="editor-right">
+          <ScreensRight
+            initialPresetId={initialPresetId}
+            onDirtyChange={setDirty}
+            onSaveRef={saveRef}
+          />
+        </div>
       </div>
     </>
   )
@@ -216,6 +286,7 @@ function LowerThirdPage() {
   const { ltState, setLtState, pushLtState, ltTimerDuration, setLtTimerDuration } = useControl()
   const [liveState, setLiveState] = useState<LowerThirdState | null>(null)
   const [hasUnpublished, setHasUnpublished] = useState(false)
+  const [previewShow, setPreviewShow] = useState(true)
   const { width: rpWidth, onMouseDown: rpDrag } = usePanelResize(200, 'shofar-lt-rp-width')
   const [countdown, setCountdown] = useState<number | null>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -283,13 +354,23 @@ function LowerThirdPage() {
       <div className="lt-left-v2">
         <div className="lt-preview-area-v2">
           <div className="lt-dual-preview">
-            {/* Local preview — always visible */}
+            {/* Local preview — toggleable so animation plays */}
             <div className="lt-preview-panel">
               <div className="lt-panel-badge">
                 <span className="live-dot" />
                 PREVIEW
+                <button
+                  className="lt-preview-replay"
+                  title="Replay animation"
+                  onClick={() => {
+                    setPreviewShow(false)
+                    requestAnimationFrame(() => requestAnimationFrame(() => setPreviewShow(true)))
+                  }}
+                >
+                  <span className="msym" style={{ fontSize: 13 }}>replay</span>
+                </button>
               </div>
-              <ScaledLTPreview state={{ ...ltState, visible: true }} show={true} />
+              <ScaledLTPreview state={{ ...ltState, visible: previewShow }} show={previewShow} />
             </div>
 
             {/* Live preview — from Supabase */}
@@ -687,10 +768,12 @@ function TopBar({ theme, onThemeToggle }: { theme: 'dark' | 'light'; onThemeTogg
 }
 
 function SideNav({ onModChange, onEditProfile, theme, onThemeToggle }: { onModChange: () => void; onEditProfile: () => void; theme: 'dark' | 'light'; onThemeToggle: () => void }) {
-  const { curMod, setCurMod } = useControl()
   const { isAdmin, signOut } = useAuth()
   const navigate = useNavigate()
-  const select = (id: ModuleId) => { setCurMod(id); onModChange() }
+  const { mod } = useParams<{ mod: string }>()
+  const curMod = (mod ?? 'screens') as ModuleId
+
+  const select = (id: ModuleId) => { navigate(`/control/${id}`); onModChange() }
 
   const handleSignOut = async () => {
     await signOut()
@@ -737,7 +820,9 @@ function SideNav({ onModChange, onEditProfile, theme, onThemeToggle }: { onModCh
 }
 
 function StatusBar() {
-  const { curScreen, curRes, scale, curMod } = useControl()
+  const { curScreen, curRes, scale } = useControl()
+  const { mod } = useParams<{ mod: string }>()
+  const curMod = (mod ?? 'screens') as ModuleId
   const screenName = 'Welcome'
   return (
     <div className="app-statusbar">
@@ -760,8 +845,11 @@ function Toast() {
 // ── Main layout switcher ──────────────────────────────────────────────────────
 
 function ControlInner() {
-  const { curMod } = useControl()
+  const { mod } = useParams<{ mod: string }>()
+  const navigate = useNavigate()
+  const curMod = (mod ?? 'screens') as ModuleId
   const [editScreen, setEditScreen] = useState<string | null | false>(false)
+  const [isNewScreen, setIsNewScreen] = useState(false)
   const [theme, setTheme] = useState<'dark' | 'light'>(() => (localStorage.getItem('shofar-theme') as 'dark' | 'light') ?? 'dark')
   const [showOnboarding, setShowOnboarding] = useState(() => !localStorage.getItem(ONBOARDED_KEY))
   const [profile, setProfile] = useState<ChurchProfile>(loadProfile)
@@ -775,7 +863,9 @@ function ControlInner() {
   useEffect(() => {
     const label = NAV_ITEMS.find(n => n.id === curMod)?.label ?? 'Hub'
     document.title = `Shofar — ${label}`
-  }, [curMod])
+    // Redirect bare /control to /control/screens
+    if (!mod) navigate('/control/screens', { replace: true })
+  }, [curMod, mod, navigate])
 
   // Show toast if redirected back from Google OAuth
   const { showToast } = useControl()
@@ -783,10 +873,10 @@ function ControlInner() {
     const params = new URLSearchParams(window.location.search)
     if (params.get('yt_connected') === '1') {
       showToast('YouTube connected successfully!')
-      window.history.replaceState({}, '', '/control')
+      window.history.replaceState({}, '', `/control/${mod ?? 'screens'}`)
     } else if (params.get('yt_error')) {
       showToast('YouTube connection failed: ' + decodeURIComponent(params.get('yt_error')!))
-      window.history.replaceState({}, '', '/control')
+      window.history.replaceState({}, '', `/control/${mod ?? 'screens'}`)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -812,7 +902,7 @@ function ControlInner() {
     setProfile(p)
   }
 
-  const resetToGallery = () => setEditScreen(false)
+  const resetToGallery = () => { setEditScreen(false); setIsNewScreen(false) }
   const inEditor = curMod === 'screens' && editScreen !== false
 
   return (
@@ -823,8 +913,10 @@ function ControlInner() {
       <div className="app-body">
         <SideNav onModChange={resetToGallery} onEditProfile={() => setProfileOpen(true)} theme={theme} onThemeToggle={() => setTheme(t => t === 'dark' ? 'light' : 'dark')} />
         <div className="app-content">
-          {curMod === 'screens' && !inEditor && <ScreensGallery onEdit={(id) => setEditScreen(id)} />}
-          {inEditor && <ScreensEditor onBack={resetToGallery} initialPresetId={editScreen as string | null} />}
+          {curMod === 'screens' && !inEditor && (
+            <ScreensGallery onEdit={(id, isNew) => { setEditScreen(id); setIsNewScreen(!!isNew) }} />
+          )}
+          {inEditor && <ScreensEditor onBack={resetToGallery} initialPresetId={editScreen as string | null} isNew={isNewScreen} />}
           {curMod === 'lowerthird'   && <LowerThirdPage />}
           {curMod === 'ticker'       && <TickerPage />}
           {curMod === 'health'       && <OBSPage />}

@@ -2433,3 +2433,63 @@ input[type=range].ctrl-slider::-webkit-slider-thumb {
   background: rgba(239,68,68,.15); color: #fca5a5;
   border: 1px solid rgba(239,68,68,.3);
 }
+
+/* ── Unsaved changes dialog ── */
+.unsaved-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(0,0,0,.6); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+}
+.unsaved-dialog {
+  background: var(--surf1, #1a1f2e);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 16px; padding: 28px 32px;
+  width: 380px; text-align: center;
+  box-shadow: 0 24px 60px rgba(0,0,0,.5);
+}
+.unsaved-icon { margin-bottom: 12px; }
+.unsaved-title {
+  font: 700 18px 'Roboto', sans-serif;
+  color: var(--text, #fff); margin: 0 0 8px;
+}
+.unsaved-body {
+  font: 14px/1.6 'Roboto', sans-serif;
+  color: rgba(255,255,255,.5); margin: 0 0 24px;
+}
+.unsaved-actions { display: flex; gap: 8px; justify-content: center; }
+.unsaved-btn {
+  padding: 9px 16px; border-radius: 8px; border: none;
+  font: 600 13px 'Roboto', sans-serif; cursor: pointer;
+  transition: opacity .15s;
+}
+.unsaved-btn:hover { opacity: .85; }
+.unsaved-discard { background: rgba(239,68,68,.15); color: #fca5a5; }
+.unsaved-cancel  { background: rgba(255,255,255,.08); color: rgba(255,255,255,.7); }
+.unsaved-save    { background: var(--accent, #E84F0E); color: #fff; }
+
+/* ── Editor tip banner ── */
+.editor-tip {
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(245,158,11,.08);
+  border: 1px solid rgba(245,158,11,.25);
+  border-radius: 8px; padding: 10px 14px;
+  margin: 0 0 12px;
+  font: 13px/1.5 'Roboto', sans-serif;
+  color: rgba(255,255,255,.7);
+}
+.editor-tip strong { color: rgba(255,255,255,.9); }
+.editor-tip-close {
+  margin-left: auto; background: none; border: none;
+  color: rgba(255,255,255,.3); cursor: pointer; padding: 2px;
+  display: flex; align-items: center;
+}
+.editor-tip-close:hover { color: rgba(255,255,255,.6); }
+
+/* ── LT preview replay button ── */
+.lt-preview-replay {
+  margin-left: 6px; background: none; border: none;
+  color: rgba(255,255,255,.35); cursor: pointer; padding: 2px;
+  display: inline-flex; align-items: center;
+  transition: color .15s;
+}
+.lt-preview-replay:hover { color: rgba(255,255,255,.7); }

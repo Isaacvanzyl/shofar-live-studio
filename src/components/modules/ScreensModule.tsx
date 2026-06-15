@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import type React from 'react'
 import type { LottieSettings, LottieTextLayer, LottieBarSettings, ScreenPresetEntry, LogoLayer } from '../../types'
 import { useControl } from '../../pages/control/ControlContext'
 import { PillTabs, Section, ColorRow, FontRow, WeightRow, SliderRow, ToggleRow, TextareaRow } from './PropPanel'
@@ -161,21 +162,36 @@ function WelcomeEditor({ settings, onPush }: WelcomeEditorProps) {
 
 export function ScreensLeft() { return null }
 
-export function ScreensRight({ initialPresetId = null }: { initialPresetId?: string | null }) {
+export function ScreensRight({ initialPresetId = null, onDirtyChange, onSaveRef }: { initialPresetId?: string | null; onDirtyChange?: (dirty: boolean) => void; onSaveRef?: React.MutableRefObject<(() => void) | null> }) {
   const { lottieSettings, setLottieSettings, pushLottieSettings, pushScreenPreset, showToast } = useControl()
 
   const [presets, setPresets] = useState<ScreenPresetEntry[]>(loadPresets)
   const [activeId, setActiveId] = useState<string | null>(initialPresetId)
   const [dirty, setDirty] = useState(false)
 
+  // For custom screens, keep edits in local state so they don't bleed into Welcome
+  const [customSettings, setCustomSettings] = useState<LottieSettings | null>(() => {
+    if (initialPresetId === null) return null
+    return loadPresets().find(x => x.id === initialPresetId)?.lottie ?? null
+  })
+
+  // The settings actually being edited right now
+  const activeSettings = activeId === null ? lottieSettings : (customSettings ?? lottieSettings)
+
+  const markDirty = useCallback((v: boolean) => { setDirty(v); onDirtyChange?.(v) }, [onDirtyChange])
+
   // On mount, load the initial preset's content if one was specified
   useEffect(() => {
     if (initialPresetId !== null) {
       const p = loadPresets().find(x => x.id === initialPresetId)
-      if (p) { setLottieSettings(p.lottie); pushScreenPreset(p.id, p.lottie) }
+      if (p) {
+        setCustomSettings(p.lottie)
+        pushScreenPreset(p.id, p.lottie)
+      }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
   const [newName, setNewName] = useState('')
   const [presetsOpen, setPresetsOpen] = useState(true)
 
@@ -183,57 +199,61 @@ export function ScreensRight({ initialPresetId = null }: { initialPresetId?: str
 
   // Edits push live to Supabase for real-time OBS preview, but don't touch localStorage
   const handlePush = (s: LottieSettings) => {
-    setLottieSettings(s)
-    setDirty(true)
+    markDirty(true)
     if (activeId === null) {
+      setLottieSettings(s)
       pushLottieSettings(s)
     } else {
+      setCustomSettings(s)
       pushScreenPreset(activeId, s)
     }
   }
 
   const loadPreset = (p: ScreenPresetEntry) => {
     setActiveId(p.id)
-    setLottieSettings(p.lottie)
+    setCustomSettings(p.lottie)
     pushScreenPreset(p.id, p.lottie)
-    setDirty(false)
+    markDirty(false)
     showToast(`Loaded: ${p.name}`)
   }
 
   const loadDefault = () => {
     setActiveId(null)
+    setCustomSettings(null)
     pushLottieSettings(lottieSettings)
-    setDirty(false)
+    markDirty(false)
     showToast('Editing default welcome')
   }
 
   // Save = update current preset in localStorage
   const saveCurrent = () => {
     if (activeId === null) {
-      // Default welcome — already pushed to Supabase on every edit, nothing extra to save
-      setDirty(false)
+      markDirty(false)
       showToast('Default welcome saved')
       return
     }
-    const updated = presets.map(p => p.id === activeId ? { ...p, lottie: lottieSettings } : p)
+    const updated = presets.map(p => p.id === activeId ? { ...p, lottie: activeSettings } : p)
     setPresets(updated)
     savePresets(updated)
-    setDirty(false)
+    markDirty(false)
     showToast(`Saved: ${activeName}`)
   }
+
+  // Keep parent editor's saveRef in sync
+  useEffect(() => { if (onSaveRef) onSaveRef.current = saveCurrent })
 
   // Save as = create new preset from current content
   const saveAsNew = () => {
     if (!newName.trim()) return
     const id = nameToId(newName)
     if (presets.find(p => p.id === id)) { showToast('Name already exists'); return }
-    const entry: ScreenPresetEntry = { id, name: newName.trim(), lottie: lottieSettings }
+    const entry: ScreenPresetEntry = { id, name: newName.trim(), lottie: activeSettings }
     const updated = [...presets, entry]
     setPresets(updated)
     savePresets(updated)
     setActiveId(id)
-    pushScreenPreset(id, lottieSettings)
-    setDirty(false)
+    pushScreenPreset(id, activeSettings)
+    markDirty(false)
     setNewName('')
     showToast(`Saved as: ${newName.trim()}`)
   }
@@ -242,7 +262,7 @@ export function ScreensRight({ initialPresetId = null }: { initialPresetId?: str
     const updated = presets.filter(p => p.id !== id)
     setPresets(updated)
     savePresets(updated)
-    if (activeId === id) { setActiveId(null); setDirty(false) }
+    if (activeId === id) { setActiveId(null); markDirty(false) }
   }
 
   return (
@@ -333,7 +353,7 @@ export function ScreensRight({ initialPresetId = null }: { initialPresetId?: str
       </div>
 
       {/* Welcome editor */}
-      <WelcomeEditor settings={lottieSettings} onPush={handlePush} />
+      <WelcomeEditor settings={activeSettings} onPush={handlePush} />
 
     </div>
   )

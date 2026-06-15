@@ -47,6 +47,7 @@ function AppRoutes() {
 
       {/* Protected studio routes */}
       <Route path="/control" element={<RequireAuth><ControlPage /></RequireAuth>} />
+      <Route path="/control/:mod" element={<RequireAuth><ControlPage /></RequireAuth>} />
       <Route path="/stream-health" element={<RequireAuth><StreamHealth /></RequireAuth>} />
 
       {/* Admin only */}
