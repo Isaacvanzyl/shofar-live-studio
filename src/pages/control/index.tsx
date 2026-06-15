@@ -5,6 +5,7 @@ import { ControlProvider, useControl } from './ControlContext'
 import { useAuth } from '../../contexts/AuthContext'
 import PreviewCanvas from '../../components/canvas/PreviewCanvas'
 import WelcomeLottie from '../../components/WelcomeLottie'
+import SpeakerLottie from '../../components/SpeakerLottie'
 import LowerThirdPreview from '../../components/canvas/LowerThirdPreview'
 import TickerStrip from '../../components/canvas/TickerStrip'
 import { ScreensLeft, ScreensRight } from '../../components/modules/ScreensModule'
@@ -268,6 +269,195 @@ function ScreensEditor({ onBack, initialPresetId, isNew }: { onBack: () => void;
         </div>
       </div>
     </>
+  )
+}
+
+// ── Speaker Slide Editor ──────────────────────────────────────────────────────
+
+function SpeakerEditor({ onBack }: { onBack: () => void }) {
+  const { speakerSettings, setSpeakerSettings, pushSpeakerSettings } = useControl()
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [scale, setScale] = useState(0.5)
+
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const update = () => setScale(el.clientWidth / 1920)
+    update()
+    const ro = new ResizeObserver(update)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
+  const update = (patch: Partial<typeof speakerSettings>) => {
+    const next = { ...speakerSettings, ...patch }
+    setSpeakerSettings(next)
+    pushSpeakerSettings(next)
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+      <div className="editor-breadcrumb">
+        <button className="breadcrumb-back" onClick={onBack}>
+          <span className="msym" style={{ fontSize: 15 }}>arrow_back</span>
+          Screens
+        </button>
+        <span style={{ color: 'var(--text-3)' }}>/</span>
+        <span className="breadcrumb-screen">Slide W/Pastor</span>
+      </div>
+
+      <div className="editor-body" style={{ gridTemplateColumns: '1fr 264px' }}>
+        <div ref={containerRef} style={{ position: 'relative', width: '100%', paddingTop: `${(1080 / 1920) * 100}%`, background: 'var(--surf2)', borderRadius: 8, overflow: 'hidden' }}>
+          <div style={{ position: 'absolute', inset: 0 }}>
+            <div style={{ transform: `scale(${scale})`, transformOrigin: 'top left', width: 1920, height: 1080 }}>
+              <SpeakerLottie settings={speakerSettings} />
+            </div>
+          </div>
+        </div>
+
+        <div className="editor-right" style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 0 }}>
+          <div style={{ padding: '10px 12px 4px', fontSize: 10, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--text-3)' }}>Title / Event</div>
+          <div style={{ padding: '0 12px 12px' }}>
+            <input className="rp-input" style={{ width: '100%', boxSizing: 'border-box' }}
+              value={speakerSettings.title}
+              onChange={e => update({ title: e.target.value })}
+              placeholder="STAFF DEVOTION" />
+          </div>
+
+          <div style={{ height: 1, background: 'var(--line)', margin: '0 12px 4px' }} />
+
+          <div style={{ padding: '10px 12px 4px', fontSize: 10, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--text-3)' }}>Speaker Name</div>
+          <div style={{ padding: '0 12px 12px' }}>
+            <input className="rp-input" style={{ width: '100%', boxSizing: 'border-box' }}
+              value={speakerSettings.speaker}
+              onChange={e => update({ speaker: e.target.value })}
+              placeholder="PHILLIP BOSHOFF" />
+          </div>
+
+          <div style={{ height: 1, background: 'var(--line)', margin: '0 12px 4px' }} />
+
+          <div style={{ padding: '10px 12px 4px', fontSize: 10, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--text-3)' }}>Location / Church</div>
+          <div style={{ padding: '0 12px 12px' }}>
+            <input className="rp-input" style={{ width: '100%', boxSizing: 'border-box' }}
+              value={speakerSettings.location}
+              onChange={e => update({ location: e.target.value })}
+              placeholder="- SOMERSET WEST '26" />
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Speaker Slide Page (standalone module) ────────────────────────────────────
+
+function SpeakerPage() {
+  const { speakerSettings, setSpeakerSettings, pushSpeakerSettings } = useControl()
+  const { profile } = useAuth()
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [scale, setScale] = useState(0.5)
+  const [copied, setCopied] = useState(false)
+
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const upd = () => setScale(el.clientWidth / 1920)
+    upd()
+    const ro = new ResizeObserver(upd)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
+  const update = (patch: Partial<typeof speakerSettings>) => {
+    const next = { ...speakerSettings, ...patch }
+    setSpeakerSettings(next)
+    pushSpeakerSettings(next)
+  }
+
+  const obsUrl = profile?.org_id
+    ? `${window.location.origin}/output/screen/speaker?org=${profile.org_id}`
+    : `${window.location.origin}/output/screen/speaker`
+
+  const copyObs = () => {
+    navigator.clipboard.writeText(obsUrl)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1800)
+  }
+
+  const { width: rpWidth, onMouseDown: rpDrag } = usePanelResize(264, 'shofar-speaker-rp-width')
+
+  return (
+    <div className="lt-page-v2">
+      <div className="lt-left-v2">
+        <div className="lt-preview-area-v2">
+          <div ref={containerRef} style={{ position: 'relative', width: '100%', paddingTop: `${(1080 / 1920) * 100}%`, background: '#f4f4f4', borderRadius: 8, overflow: 'hidden' }}>
+            <div style={{ position: 'absolute', inset: 0 }}>
+              <div style={{ transform: `scale(${scale})`, transformOrigin: 'top left', width: 1920, height: 1080 }}>
+                <SpeakerLottie settings={speakerSettings} />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="ctrl-anim-row" style={{ gap: 8 }}>
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, background: 'var(--surf2)', borderRadius: 8, padding: '8px 12px', overflow: 'hidden' }}>
+            <span className="msym" style={{ fontSize: 15, color: 'var(--accent)', flexShrink: 0 }}>cast</span>
+            <code style={{ fontSize: 11, color: 'var(--text-3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{obsUrl}</code>
+          </div>
+          <button className="lt-push-live-btn" style={{ flexShrink: 0, width: 'auto', padding: '0 16px' }} onClick={copyObs}>
+            <span className="msym" style={{ fontSize: 15 }}>{copied ? 'check' : 'content_copy'}</span>
+            {copied ? 'Copied!' : 'Copy OBS URL'}
+          </button>
+        </div>
+      </div>
+
+      <PanelDragHandle onMouseDown={rpDrag} />
+
+      <div className="lt-right-v2" style={{ width: rpWidth }}>
+        <div style={{ display: 'flex', flexDirection: 'column', overflowY: 'auto', flex: 1 }}>
+
+          <button className="rp-accordion-hd open">Title / Event</button>
+          <div className="rp-accordion-body">
+            <div className="rp-row">
+              <span className="rp-label">Text</span>
+              <div className="rp-control">
+                <input className="rp-input" style={{ flex: 1 }}
+                  value={speakerSettings.title}
+                  onChange={e => update({ title: e.target.value })}
+                  placeholder="STAFF DEVOTION" />
+              </div>
+            </div>
+          </div>
+
+          <button className="rp-accordion-hd open">Speaker Name</button>
+          <div className="rp-accordion-body">
+            <div className="rp-row">
+              <span className="rp-label">Name</span>
+              <div className="rp-control">
+                <input className="rp-input" style={{ flex: 1 }}
+                  value={speakerSettings.speaker}
+                  onChange={e => update({ speaker: e.target.value })}
+                  placeholder="PHILLIP BOSHOFF" />
+              </div>
+            </div>
+          </div>
+
+          <button className="rp-accordion-hd open">Location / Church</button>
+          <div className="rp-accordion-body">
+            <div className="rp-row">
+              <span className="rp-label">Text</span>
+              <div className="rp-control">
+                <input className="rp-input" style={{ flex: 1 }}
+                  value={speakerSettings.location}
+                  onChange={e => update({ location: e.target.value })}
+                  placeholder="- SOMERSET WEST '26" />
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -686,6 +876,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}</code>
 
 const NAV_ITEMS: { id: ModuleId; label: string; icon: string }[] = [
   { id: 'screens',      label: 'Screens',       icon: 'tv'             },
+  { id: 'speaker',      label: 'Slide W/Pastor', icon: 'person_play'   },
   { id: 'lowerthird',   label: 'Lower Third',   icon: 'subtitles'      },
   { id: 'ticker',       label: 'Ticker',        icon: 'rss_feed'       },
   { id: 'health',       label: 'OBS Sources',   icon: 'cast'           },
@@ -868,6 +1059,7 @@ function ControlInner() {
   const curMod = (mod ?? 'screens') as ModuleId
   const [editScreen, setEditScreen] = useState<string | null | false>(false)
   const [isNewScreen, setIsNewScreen] = useState(false)
+
   const [theme, setTheme] = useState<'dark' | 'light'>(() => (localStorage.getItem('shofar-theme') as 'dark' | 'light') ?? 'dark')
   const [showOnboarding, setShowOnboarding] = useState(() => !localStorage.getItem(ONBOARDED_KEY))
   const [profile, setProfile] = useState<ChurchProfile>(loadProfile)
@@ -932,9 +1124,12 @@ function ControlInner() {
         <SideNav onModChange={resetToGallery} onEditProfile={() => setProfileOpen(true)} theme={theme} onThemeToggle={() => setTheme(t => t === 'dark' ? 'light' : 'dark')} />
         <div className="app-content">
           {curMod === 'screens' && !inEditor && (
-            <ScreensGallery onEdit={(id, isNew) => { setEditScreen(id); setIsNewScreen(!!isNew) }} />
+            <ScreensGallery
+              onEdit={(id, isNew) => { setEditScreen(id); setIsNewScreen(!!isNew) }}
+            />
           )}
           {inEditor && <ScreensEditor onBack={resetToGallery} initialPresetId={editScreen as string | null} isNew={isNewScreen} />}
+          {curMod === 'speaker'      && <SpeakerPage />}
           {curMod === 'lowerthird'   && <LowerThirdPage />}
           {curMod === 'ticker'       && <TickerPage />}
           {curMod === 'health'       && <OBSPage />}

@@ -7,7 +7,7 @@ export interface ScreenPresetEntry {
   lottie: LottieSettings
 }
 export type ResId = '1080' | '4k'
-export type ModuleId = 'screens' | 'lowerthird' | 'ticker' | 'health' | 'streamhealth'
+export type ModuleId = 'screens' | 'speaker' | 'lowerthird' | 'ticker' | 'health' | 'streamhealth'
 
 export interface ScreenElement {
   id: string
@@ -156,4 +156,10 @@ export interface LottieSettings {
   bar: LottieBarSettings
   logoTl?: LogoLayer | null
   logoTr?: LogoLayer | null
+}
+
+export interface SpeakerSettings {
+  title: string       // event/sermon title
+  speaker: string     // speaker name
+  location: string    // church/location
 }

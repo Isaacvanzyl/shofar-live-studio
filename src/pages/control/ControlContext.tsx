@@ -16,6 +16,7 @@ import type {
   TickerState,
   ThemeState,
   LottieSettings,
+  SpeakerSettings,
 } from '../../types'
 import { setState as setSupabaseState, getState as getSupabaseState } from '../../lib/supabase'
 
@@ -86,6 +87,12 @@ export const DEFAULT_LOTTIE_SETTINGS: LottieSettings = {
   bar: { visible: true, x: 309, y: 495, width: 592, height: 6, color: '#F15C22', opacity: 1, radius: 3 },
 }
 
+export const DEFAULT_SPEAKER_SETTINGS: SpeakerSettings = {
+  title:    'STAFF DEVOTION',
+  speaker:  'PHILLIP BOSHOFF',
+  location: "- SOMERSET WEST '26",
+}
+
 // ── Context type ─────────────────────────────────────────────────────────────
 
 interface ControlContextType {
@@ -124,6 +131,9 @@ interface ControlContextType {
   setLottieSettings: (s: LottieSettings) => void
   pushLottieSettings: (s: LottieSettings) => void
   pushScreenPreset: (id: string, s: LottieSettings) => Promise<void>
+  speakerSettings: SpeakerSettings
+  setSpeakerSettings: (s: SpeakerSettings) => void
+  pushSpeakerSettings: (s: SpeakerSettings) => Promise<void>
   setScale: (s: number) => void
   setGridOn: (v: boolean) => void
   showToast: (msg: string) => void
@@ -156,6 +166,7 @@ export function ControlProvider({ children, orgId }: { children: ReactNode; orgI
   const [tickerState, setTickerState] = useState<TickerState>(DEFAULT_TICKER_STATE)
   const [themeState, setThemeState] = useState<ThemeState>(DEFAULT_THEME_STATE)
   const [lottieSettings, setLottieSettings] = useState<LottieSettings>(DEFAULT_LOTTIE_SETTINGS)
+  const [speakerSettings, setSpeakerSettings] = useState<SpeakerSettings>(DEFAULT_SPEAKER_SETTINGS)
   const [scale, setScale] = useState(1)
   const [gridOn, setGridOn] = useState(false)
   const [ltTimerDuration, setLtTimerDuration] = useState<number | null>(null)
@@ -167,6 +178,9 @@ export function ControlProvider({ children, orgId }: { children: ReactNode; orgI
   useEffect(() => {
     getSupabaseState(ck('welcome_lottie')).then(data => {
       if (data) setLottieSettings(data as LottieSettings)
+    }).catch(() => {})
+    getSupabaseState(ck('speaker_slide')).then(data => {
+      if (data) setSpeakerSettings(data as SpeakerSettings)
     }).catch(() => {})
   }, [])
 
@@ -296,6 +310,15 @@ export function ControlProvider({ children, orgId }: { children: ReactNode; orgI
     []
   )
 
+  const pushSpeakerSettings = useCallback(
+    async (s: SpeakerSettings) => {
+      setSpeakerSettings(s)
+      const { error } = await setSupabaseState(ck('speaker_slide'), s)
+      if (error) console.error('[Supabase] speaker_slide push failed:', error)
+    },
+    []
+  )
+
   const pushScreenPreset = useCallback(
     async (id: string, s: LottieSettings) => {
       const { error } = await setSupabaseState(ck(`screen_${id}`), s)
@@ -396,6 +419,7 @@ ${elHtml}${tickerHtml}
     setTickerState, pushTickerState,
     setThemeState, pushThemeState,
     lottieSettings, setLottieSettings, pushLottieSettings, pushScreenPreset,
+    speakerSettings, setSpeakerSettings, pushSpeakerSettings,
     setScale, setGridOn,
     showToast, buildExport,
     ltTimerDuration, setLtTimerDuration,
