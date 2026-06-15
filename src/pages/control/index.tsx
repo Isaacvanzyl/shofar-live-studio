@@ -455,8 +455,39 @@ function SpeakerPage() {
             </div>
           </div>
 
+          <button className="rp-accordion-hd open">Logo</button>
+          <div className="rp-accordion-body">
+            <div className="rp-row">
+              <span className="rp-label">Image</span>
+              <div className="rp-control">
+                <SpeakerLogoUpload value={speakerSettings.logo ?? null} onChange={logo => update({ logo })} />
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
+    </div>
+  )
+}
+
+function SpeakerLogoUpload({ value, onChange }: { value: string | null; onChange: (v: string | null) => void }) {
+  const ref = useRef<HTMLInputElement>(null)
+  const read = (files: FileList | null) => {
+    if (!files?.[0]) return
+    const reader = new FileReader()
+    reader.onload = e => onChange(e.target?.result as string)
+    reader.readAsDataURL(files[0])
+  }
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
+      <input ref={ref} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => read(e.target.files)} />
+      {value
+        ? <img src={value} alt="" style={{ height: 28, maxWidth: 80, objectFit: 'contain', borderRadius: 3, border: '1px solid var(--line)' }} />
+        : <span style={{ fontSize: 11, color: 'var(--text-3)' }}>No logo</span>
+      }
+      <button className="rp-btn-sm" onClick={() => ref.current?.click()}>{value ? 'Change' : 'Upload'}</button>
+      {value && <button className="rp-btn-sm" onClick={() => onChange(null)}>Remove</button>}
     </div>
   )
 }

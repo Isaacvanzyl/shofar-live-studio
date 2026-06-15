@@ -162,4 +162,5 @@ export interface SpeakerSettings {
   title: string       // event/sermon title
   speaker: string     // speaker name
   location: string    // church/location
+  logo?: string | null
 }
