@@ -2510,3 +2510,58 @@ input[type=range].ctrl-slider::-webkit-slider-thumb {
   pointer-events: none;
   z-index: 10;
 }
+
+/* ── Mobile: Login page ── */
+@media (max-width: 700px) {
+  .login-shell {
+    flex-direction: column;
+    height: auto;
+    min-height: 100vh;
+    overflow-y: auto;
+  }
+  .login-left {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--line);
+    min-height: 0;
+  }
+  .login-left-inner {
+    padding: 36px 28px 32px;
+    gap: 20px;
+  }
+  .login-hero {
+    text-align: center;
+    align-items: center;
+  }
+  .login-hero-title {
+    font-size: 36px;
+    margin-bottom: 12px;
+  }
+  .login-hero-sub {
+    font-size: 14px;
+    max-width: 100%;
+  }
+  .login-left-footer { display: none; }
+  .login-orb-1 { width: 300px; height: 300px; top: -100px; right: -100px; }
+  .login-orb-2 { width: 200px; height: 200px; bottom: -50px; left: -50px; }
+
+  .login-right {
+    flex: none;
+    padding: 36px 24px 48px;
+    align-items: flex-start;
+  }
+  .login-form-wrap {
+    max-width: 100%;
+  }
+  .login-form-title { font-size: 24px; }
+
+  .login-btn {
+    padding: 16px;
+    font-size: 15px;
+  }
+
+  .app-version-tag {
+    bottom: 8px;
+    left: 12px;
+  }
+}
