@@ -132,7 +132,6 @@ export default function LoginPage() {
           </form>
         </div>
       </div>
-      <div className="app-version-tag">v{VERSION}</div>
     </div>
   )
 }
