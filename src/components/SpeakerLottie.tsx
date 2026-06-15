@@ -31,12 +31,6 @@ function buildData(settings: SpeakerSettings): object {
       pk.a = 0; pk.k = [960, 105, 0]
     }
   }
-  // Hide the logo box layers — replaced by HTML frosted glass overlay
-  for (const nm of ['LogoRect', 'LogoRect 2', '_Logo Holder']) {
-    for (const layer of data.layers.filter(l => l.nm === nm)) {
-      (layer.ks as Record<string, unknown>).o = { a: 0, k: 0 }
-    }
-  }
   return data
 }
 
@@ -81,41 +75,10 @@ export default function SpeakerLottie({ settings, staticFrame }: Props) {
     return () => { anim.destroy() }
   }, [settings.title, settings.speaker, settings.location, staticFrame])
 
-  // LogoRect bounds: center (95,95), size 159×159, radius 40
-  const BOX = { left: 16, top: 16, size: 159, radius: 40 }
-
   return (
-    <div style={{ position: 'absolute', inset: 0, width: 1920, height: 1080 }}>
-      <div ref={containerRef} style={{ position: 'absolute', inset: 0 }} />
-
-      {/* Frosted glass logo box */}
-      <div style={{
-        position: 'absolute',
-        left: BOX.left, top: BOX.top,
-        width: BOX.size, height: BOX.size,
-        borderRadius: BOX.radius,
-        backdropFilter: 'blur(18px)',
-        WebkitBackdropFilter: 'blur(18px)',
-        background: 'rgba(244, 244, 244, 0.25)',
-        pointerEvents: 'none',
-      }} />
-
-      {/* Logo above (on top of) the frosted glass */}
-      {settings.logo && (
-        <img
-          src={settings.logo}
-          alt=""
-          style={{
-            position: 'absolute',
-            left: BOX.left, top: BOX.top,
-            width: BOX.size, height: BOX.size,
-            objectFit: 'contain',
-            padding: 16,
-            boxSizing: 'border-box',
-            pointerEvents: 'none',
-          }}
-        />
-      )}
-    </div>
+    <div
+      ref={containerRef}
+      style={{ position: 'absolute', inset: 0, width: 1920, height: 1080 }}
+    />
   )
 }
