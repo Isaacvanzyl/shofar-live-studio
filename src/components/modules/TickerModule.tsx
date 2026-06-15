@@ -2,6 +2,8 @@ import { useState } from 'react'
 import type { TickerState, TickerPresetData } from '../../types'
 import { useControl } from '../../pages/control/ControlContext'
 import { Section, TextareaRow, ColorRow, FontRow, SliderRow, ToggleRow, TextRow } from './PropPanel'
+import PackBrowser from '../PackBrowser'
+import type { PackItem } from '../../hooks/useAssignedPacks'
 
 // ── Preset helpers ──────────────────────────────────────────────────────────
 
@@ -168,6 +170,21 @@ export function TickerControls() {
             </div>
           </div>
         )}
+      </div>
+
+      {/* Pack Browser */}
+      <div style={{ padding: '8px 8px 0' }}>
+        <PackBrowser
+          type="ticker"
+          onAddToMyPresets={(item: PackItem, packName: string) => {
+            const data = loadPresets('ticker')
+            const key = `[Pack] ${packName} — ${item.name}`
+            data[key] = item.data as unknown as TickerPresetData
+            savePresets('ticker', data)
+            setPresets({ ...data })
+            showToast(`Added: ${key}`)
+          }}
+        />
       </div>
 
     </div>

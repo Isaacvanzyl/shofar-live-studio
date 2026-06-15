@@ -197,7 +197,7 @@ export function ScreensRight({ initialPresetId = null, onDirtyChange, onSaveRef 
 
   const activeName = activeId === null ? 'Welcome (Default)' : (presets.find(p => p.id === activeId)?.name ?? activeId)
 
-  // Edits push live to Supabase for real-time OBS preview, but don't touch localStorage
+  // Edits push live to Supabase and update context so PreviewCanvas reflects changes
   const handlePush = (s: LottieSettings) => {
     markDirty(true)
     if (activeId === null) {
@@ -205,6 +205,7 @@ export function ScreensRight({ initialPresetId = null, onDirtyChange, onSaveRef 
       pushLottieSettings(s)
     } else {
       setCustomSettings(s)
+      setLottieSettings(s)   // drive PreviewCanvas live
       pushScreenPreset(activeId, s)
     }
   }

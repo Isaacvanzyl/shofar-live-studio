@@ -2,6 +2,8 @@ import { useState, useRef } from 'react'
 import type { LowerThirdState, LTPresetData } from '../../types'
 import { useControl } from '../../pages/control/ControlContext'
 import { Section, TextRow, ColorRow, FontRow, SliderRow, ToggleRow } from './PropPanel'
+import PackBrowser from '../PackBrowser'
+import type { PackItem } from '../../hooks/useAssignedPacks'
 
 // ── Preset helpers ──────────────────────────────────────────────────────────
 
@@ -131,6 +133,21 @@ export function LTControls() {
             </div>
           </div>
         )}
+      </div>
+
+      {/* Pack Browser */}
+      <div style={{ padding: '8px 8px 0' }}>
+        <PackBrowser
+          type="lowerthird"
+          onAddToMyPresets={(item: PackItem, packName: string) => {
+            const data = loadPresets('lt')
+            const key = `[Pack] ${packName} — ${item.name}`
+            data[key] = item.data as unknown as LTPresetData
+            savePresets('lt', data)
+            setPresets({ ...data })
+            showToast(`Added: ${key}`)
+          }}
+        />
       </div>
 
       <Accordion title="Name">

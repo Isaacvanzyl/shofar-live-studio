@@ -1,5 +1,6 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import type { ChurchProfile } from './Onboarding'
+import { supabase } from '../lib/supabase'
 
 interface Props {
   open: boolean
@@ -11,36 +12,46 @@ interface Props {
 export default function ProfilePanel({ open, onClose, profile, onSave }: Props) {
   const [churchName, setChurchName] = useState(profile.churchName)
   const [city, setCity] = useState(profile.city)
-  const [logo, setLogo] = useState<string | null>(profile.logo)
   const [saved, setSaved] = useState(false)
-  const fileRef = useRef<HTMLInputElement>(null)
+
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [pwStatus, setPwStatus] = useState<'idle' | 'saving' | 'ok' | 'error'>('idle')
+  const [pwError, setPwError] = useState('')
 
   useEffect(() => {
     setChurchName(profile.churchName)
     setCity(profile.city)
-    setLogo(profile.logo)
   }, [profile])
 
-  const handleLogo = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = ev => setLogo(ev.target?.result as string)
-    reader.readAsDataURL(file)
-  }
-
   const handleSave = () => {
-    onSave({ churchName, city, logo })
+    onSave({ churchName, city, logo: null })
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }
 
+  const handleChangePassword = async () => {
+    if (!newPassword) return
+    if (newPassword !== confirmPassword) { setPwError('Passwords do not match'); return }
+    if (newPassword.length < 8) { setPwError('Password must be at least 8 characters'); return }
+    setPwStatus('saving')
+    setPwError('')
+    const { error } = await supabase.auth.updateUser({ password: newPassword })
+    if (error) {
+      setPwError(error.message)
+      setPwStatus('error')
+    } else {
+      setPwStatus('ok')
+      setNewPassword('')
+      setConfirmPassword('')
+      setTimeout(() => setPwStatus('idle'), 3000)
+    }
+  }
+
   return (
     <>
-      {/* Backdrop */}
       <div className={`panel-backdrop${open ? ' open' : ''}`} onClick={onClose} />
 
-      {/* Slide-out panel */}
       <div className={`profile-panel${open ? ' open' : ''}`}>
         <div className="pp-header">
           <div className="pp-title">
@@ -53,28 +64,6 @@ export default function ProfilePanel({ open, onClose, profile, onSave }: Props) 
         </div>
 
         <div className="pp-body">
-          {/* Church logo */}
-          <div className="pp-section">
-            <div className="pp-section-title">Church Logo</div>
-            <div className="pp-logo-zone" onClick={() => fileRef.current?.click()}>
-              {logo ? (
-                <img src={logo} alt="Church logo" className="pp-logo-preview" />
-              ) : (
-                <>
-                  <span className="msym" style={{ fontSize: 28, color: 'var(--text-3)' }}>add_photo_alternate</span>
-                  <span className="pp-logo-hint">Click to upload</span>
-                </>
-              )}
-            </div>
-            <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleLogo} />
-            {logo && (
-              <button className="pp-remove-logo" onClick={() => setLogo(null)}>
-                <span className="msym" style={{ fontSize: 14 }}>delete</span>
-                Remove logo
-              </button>
-            )}
-          </div>
-
           {/* Church details */}
           <div className="pp-section">
             <div className="pp-section-title">Church Details</div>
@@ -100,13 +89,45 @@ export default function ProfilePanel({ open, onClose, profile, onSave }: Props) 
             </div>
           </div>
 
-          {/* Account — placeholder for Phase 2 */}
+          {/* Change password */}
           <div className="pp-section">
-            <div className="pp-section-title">Account</div>
-            <div className="pp-placeholder">
-              <span className="msym" style={{ fontSize: 18, color: 'var(--text-3)' }}>lock</span>
-              Password management available after login is set up.
+            <div className="pp-section-title">Change Password</div>
+            <div className="pp-field">
+              <label className="pp-label">New password</label>
+              <input
+                className="pp-input"
+                type="password"
+                placeholder="Min. 8 characters"
+                value={newPassword}
+                onChange={e => { setNewPassword(e.target.value); setPwStatus('idle'); setPwError('') }}
+              />
             </div>
+            <div className="pp-field">
+              <label className="pp-label">Confirm password</label>
+              <input
+                className="pp-input"
+                type="password"
+                placeholder="Repeat new password"
+                value={confirmPassword}
+                onChange={e => { setConfirmPassword(e.target.value); setPwStatus('idle'); setPwError('') }}
+              />
+            </div>
+            {pwError && (
+              <div className="pp-pw-error">
+                <span className="msym" style={{ fontSize: 14 }}>error</span>
+                {pwError}
+              </div>
+            )}
+            <button
+              className={`pp-pw-btn${pwStatus === 'ok' ? ' ok' : ''}`}
+              onClick={handleChangePassword}
+              disabled={pwStatus === 'saving' || !newPassword}
+            >
+              {pwStatus === 'saving' && <span className="msym spin" style={{ fontSize: 16 }}>refresh</span>}
+              {pwStatus === 'ok' && <span className="msym" style={{ fontSize: 16 }}>check_circle</span>}
+              {pwStatus !== 'saving' && pwStatus !== 'ok' && <span className="msym" style={{ fontSize: 16 }}>lock_reset</span>}
+              {pwStatus === 'saving' ? 'Updating…' : pwStatus === 'ok' ? 'Password updated!' : 'Update password'}
+            </button>
           </div>
         </div>
 

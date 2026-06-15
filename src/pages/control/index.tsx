@@ -10,6 +10,8 @@ import TickerStrip from '../../components/canvas/TickerStrip'
 import { ScreensLeft, ScreensRight } from '../../components/modules/ScreensModule'
 import { LTControls } from '../../components/modules/LowerThirdModule'
 import { TickerLeft } from '../../components/modules/TickerModule'
+import PackBrowser from '../../components/PackBrowser'
+import type { PackItem } from '../../hooks/useAssignedPacks'
 import { getState } from '../../lib/supabase'
 import { useOBSStats } from '../../hooks/useOBSStats'
 import type { ModuleId, LowerThirdState } from '../../types'
@@ -169,6 +171,18 @@ function ScreensGallery({ onEdit }: { onEdit: (id: string | null, isNew?: boolea
             <div className="screen-card-desc">Duplicates current welcome as a starting point</div>
           </div>
         </div>
+      </div>
+
+      {/* Pack browser — read-only, "Add to my presets" clones into localStorage */}
+      <div style={{ padding: '0 16px 16px' }}>
+        <PackBrowser
+          type="screen"
+          onAddToMyPresets={(item: PackItem, packName: string) => {
+            const id = `screen_${Date.now()}`
+            pushScreenPreset(id, item.data as unknown as Parameters<typeof pushScreenPreset>[1])
+            setPresets(readScreenPresets())
+          }}
+        />
       </div>
     </div>
   )
