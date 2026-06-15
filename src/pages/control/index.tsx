@@ -284,6 +284,8 @@ function ScaledLTPreview({ state, show }: { state: LowerThirdState; show: boolea
 
 function LowerThirdPage() {
   const { ltState, setLtState, pushLtState, ltTimerDuration, setLtTimerDuration } = useControl()
+  const { profile } = useAuth()
+  const ck = (ch: string) => profile?.org_id ? `${profile.org_id}:${ch}` : ch
   const [liveState, setLiveState] = useState<LowerThirdState | null>(null)
   const [hasUnpublished, setHasUnpublished] = useState(false)
   const [previewShow, setPreviewShow] = useState(true)
@@ -297,7 +299,7 @@ function LowerThirdPage() {
     let cancelled = false
     const poll = async () => {
       try {
-        const s = await getState('lower-third')
+        const s = await getState(ck('lower-third'))
         if (!cancelled && s) setLiveState(s as LowerThirdState)
       } catch { /* ignore */ }
     }
