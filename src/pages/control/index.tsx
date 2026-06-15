@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import { VERSION } from '../../version'
 import { ControlProvider, useControl } from './ControlContext'
 import { useAuth } from '../../contexts/AuthContext'
 import PreviewCanvas from '../../components/canvas/PreviewCanvas'
@@ -817,6 +818,7 @@ function SideNav({ onModChange, onEditProfile, theme, onThemeToggle }: { onModCh
         <span className="msym" style={{ fontSize: 18 }}>{theme === 'dark' ? 'light_mode' : 'dark_mode'}</span>
         {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
       </button>
+      <div className="snav-version">v{VERSION}</div>
     </nav>
   )
 }

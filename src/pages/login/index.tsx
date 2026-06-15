@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import shofarLogo from '../../assets/ShofarLogo_SonWhite.png'
 import { useAuth } from '../../contexts/AuthContext'
+import { VERSION } from '../../version'
 
 export default function LoginPage() {
   useEffect(() => { document.title = 'Shofar Live Studio' }, [])
@@ -131,6 +132,7 @@ export default function LoginPage() {
           </form>
         </div>
       </div>
+      <div className="app-version-tag">v{VERSION}</div>
     </div>
   )
 }

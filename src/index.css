@@ -2493,3 +2493,20 @@ input[type=range].ctrl-slider::-webkit-slider-thumb {
   transition: color .15s;
 }
 .lt-preview-replay:hover { color: rgba(255,255,255,.7); }
+
+/* ── Version tag ── */
+.snav-version {
+  padding: 6px 14px 10px;
+  font: 11px 'Roboto Mono', monospace;
+  color: rgba(255,255,255,.18);
+  letter-spacing: .04em;
+}
+.app-version-tag {
+  position: fixed;
+  bottom: 12px; left: 16px;
+  font: 11px 'Roboto Mono', monospace;
+  color: rgba(255,255,255,.2);
+  letter-spacing: .04em;
+  pointer-events: none;
+  z-index: 10;
+}
