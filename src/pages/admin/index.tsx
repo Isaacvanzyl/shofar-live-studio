@@ -23,9 +23,10 @@ interface ProfileRow {
 
 // ── Shared helpers ────────────────────────────────────────────
 
-function obsUrl(orgId: string, type: 'lower-third' | 'ticker' | 'screen') {
+function obsUrl(orgId: string, type: 'lower-third' | 'ticker' | 'screen' | 'speaker') {
   const base = window.location.origin
   if (type === 'screen') return `${base}/output/welcome?org=${orgId}`
+  if (type === 'speaker') return `${base}/output/screen/speaker?org=${orgId}`
   return `${base}/output/${type}?org=${orgId}`
 }
 
@@ -379,6 +380,7 @@ function OBSUrlsModal({ org, onClose }: { org: OrgRow; onClose: () => void }) {
     { label: 'Lower Third', url: obsUrl(org.id, 'lower-third') },
     { label: 'Ticker', url: obsUrl(org.id, 'ticker') },
     { label: 'Screen / Welcome', url: obsUrl(org.id, 'screen') },
+    { label: 'Slide W/Pastor', url: obsUrl(org.id, 'speaker') },
   ]
   return (
     <div className="adm-modal-overlay" onClick={onClose}>
@@ -600,8 +602,8 @@ function YourAccount() {
         <div className="adm-card" style={{ marginTop: 16 }}>
           <div className="adm-card-header">Your OBS Source URLs</div>
           <div style={{ padding: '12px 0' }}>
-            {(['lower-third', 'ticker', 'screen'] as const).map(type => ({
-              label: type === 'lower-third' ? 'Lower Third' : type === 'ticker' ? 'Ticker' : 'Screen / Welcome',
+            {(['lower-third', 'ticker', 'screen', 'speaker'] as const).map(type => ({
+              label: type === 'lower-third' ? 'Lower Third' : type === 'ticker' ? 'Ticker' : type === 'screen' ? 'Screen / Welcome' : 'Slide W/Pastor',
               url: obsUrl(org.id, type),
             })).map(u => (
               <div key={u.label} className="adm-obs-row">

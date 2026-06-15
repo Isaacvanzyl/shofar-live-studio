@@ -152,6 +152,9 @@ function WelcomeEditor({ settings, onPush }: WelcomeEditorProps) {
           <LogoUploadSlot label="Image" side="tl" value={settings.logoTl} onChange={v => onPush({ ...settings, logoTl: v })} />
           <Section title="Right Logo" />
           <LogoUploadSlot label="Image" side="tr" value={settings.logoTr} onChange={v => onPush({ ...settings, logoTr: v })} />
+          <Section title="Shofar Logo Position" />
+          <SliderRow label="X" min={-1920} max={1920} value={settings.logoX ?? 0} onChange={v => onPush({ ...settings, logoX: v })} />
+          <SliderRow label="Y" min={-1080} max={1080} value={settings.logoY ?? 0} onChange={v => onPush({ ...settings, logoY: v })} />
         </>
       )}
     </div>

@@ -6,12 +6,15 @@ import { useAuth } from '../../contexts/AuthContext'
 import PreviewCanvas from '../../components/canvas/PreviewCanvas'
 import WelcomeLottie from '../../components/WelcomeLottie'
 import SpeakerLottie from '../../components/SpeakerLottie'
+import SlideLottie from '../../components/SlideLottie'
 import LowerThirdPreview from '../../components/canvas/LowerThirdPreview'
 import TickerStrip from '../../components/canvas/TickerStrip'
 import { ScreensLeft, ScreensRight } from '../../components/modules/ScreensModule'
 import { LTControls } from '../../components/modules/LowerThirdModule'
 import { TickerLeft } from '../../components/modules/TickerModule'
 import PackBrowser from '../../components/PackBrowser'
+import { PillTabs, Section, TextareaRow, FontRow, WeightRow, SliderRow, ColorRow, ToggleRow } from '../../components/modules/PropPanel'
+import type { LottieTextLayer, SpeakerBarSettings, SlideSettings } from '../../types'
 import type { PackItem } from '../../hooks/useAssignedPacks'
 import { getState } from '../../lib/supabase'
 import { useOBSStats } from '../../hooks/useOBSStats'
@@ -274,10 +277,19 @@ function ScreensEditor({ onBack, initialPresetId, isNew }: { onBack: () => void;
 
 // ── Speaker Slide Editor ──────────────────────────────────────────────────────
 
+const SPEAKER_TABS = [
+  { key: 'title',    label: 'Title' },
+  { key: 'speaker',  label: 'Speaker' },
+  { key: 'location', label: 'Location' },
+  { key: 'bar',      label: 'Bar' },
+  { key: 'logo',     label: 'Logo' },
+]
+
 function SpeakerEditor({ onBack }: { onBack: () => void }) {
   const { speakerSettings, setSpeakerSettings, pushSpeakerSettings } = useControl()
   const containerRef = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState(0.5)
+  const [activeTab, setActiveTab] = useState<'title' | 'speaker' | 'location'>('title')
 
   useEffect(() => {
     const el = containerRef.current
@@ -289,11 +301,13 @@ function SpeakerEditor({ onBack }: { onBack: () => void }) {
     return () => ro.disconnect()
   }, [])
 
-  const update = (patch: Partial<typeof speakerSettings>) => {
-    const next = { ...speakerSettings, ...patch }
+  const updateLayer = (key: 'title' | 'speaker' | 'location', patch: Partial<LottieTextLayer>) => {
+    const next = { ...speakerSettings, [key]: { ...speakerSettings[key], ...patch } }
     setSpeakerSettings(next)
     pushSpeakerSettings(next)
   }
+
+  const layer = speakerSettings[activeTab]
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
@@ -316,33 +330,19 @@ function SpeakerEditor({ onBack }: { onBack: () => void }) {
         </div>
 
         <div className="editor-right" style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 0 }}>
-          <div style={{ padding: '10px 12px 4px', fontSize: 10, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--text-3)' }}>Title / Event</div>
-          <div style={{ padding: '0 12px 12px' }}>
-            <input className="rp-input" style={{ width: '100%', boxSizing: 'border-box' }}
-              value={speakerSettings.title}
-              onChange={e => update({ title: e.target.value })}
-              placeholder="STAFF DEVOTION" />
-          </div>
-
-          <div style={{ height: 1, background: 'var(--line)', margin: '0 12px 4px' }} />
-
-          <div style={{ padding: '10px 12px 4px', fontSize: 10, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--text-3)' }}>Speaker Name</div>
-          <div style={{ padding: '0 12px 12px' }}>
-            <input className="rp-input" style={{ width: '100%', boxSizing: 'border-box' }}
-              value={speakerSettings.speaker}
-              onChange={e => update({ speaker: e.target.value })}
-              placeholder="PHILLIP BOSHOFF" />
-          </div>
-
-          <div style={{ height: 1, background: 'var(--line)', margin: '0 12px 4px' }} />
-
-          <div style={{ padding: '10px 12px 4px', fontSize: 10, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--text-3)' }}>Location / Church</div>
-          <div style={{ padding: '0 12px 12px' }}>
-            <input className="rp-input" style={{ width: '100%', boxSizing: 'border-box' }}
-              value={speakerSettings.location}
-              onChange={e => update({ location: e.target.value })}
-              placeholder="- SOMERSET WEST '26" />
-          </div>
+          <PillTabs tabs={SPEAKER_TABS} active={activeTab} onChange={k => setActiveTab(k as 'title' | 'speaker' | 'location')} />
+          <Section title="Content" />
+          <TextareaRow label="Text" value={layer.text} onChange={v => updateLayer(activeTab, { text: v })} />
+          <Section title="Typography" />
+          <FontRow label="Font" value={layer.fontFamily ?? ''} onChange={v => updateLayer(activeTab, { fontFamily: v })} />
+          <WeightRow label="Weight" value={layer.fontWeight ?? 400} onChange={v => updateLayer(activeTab, { fontWeight: v })} />
+          <SliderRow label="Size" min={8} max={300} value={layer.size} onChange={v => updateLayer(activeTab, { size: v })} />
+          <SliderRow label="Spacing" min={-5} max={30} value={layer.letterSpacing ?? 0} onChange={v => updateLayer(activeTab, { letterSpacing: v })} />
+          <ColorRow label="Colour" value={layer.color} onChange={v => updateLayer(activeTab, { color: v })} />
+          <ToggleRow label="All caps" value={layer.uppercase ?? false} onChange={v => updateLayer(activeTab, { uppercase: v })} />
+          <Section title="Position" />
+          <SliderRow label="X" min={0} max={1900} value={layer.x ?? 0} onChange={v => updateLayer(activeTab, { x: v })} />
+          <SliderRow label="Y" min={0} max={1070} value={layer.y ?? 0} onChange={v => updateLayer(activeTab, { y: v })} />
         </div>
       </div>
     </div>
@@ -353,61 +353,167 @@ function SpeakerEditor({ onBack }: { onBack: () => void }) {
 
 function SpeakerPage() {
   const { speakerSettings, setSpeakerSettings, pushSpeakerSettings } = useControl()
-  const { profile } = useAuth()
-  const containerRef = useRef<HTMLDivElement>(null)
+  const canvasAreaRef = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState(0.5)
-  const [copied, setCopied] = useState(false)
+  const [activeTab, setActiveTab] = useState<'title' | 'speaker' | 'location' | 'bar' | 'logo'>('title')
 
   useEffect(() => {
-    const el = containerRef.current
+    const el = canvasAreaRef.current
     if (!el) return
-    const upd = () => setScale(el.clientWidth / 1920)
+    const upd = () => {
+      const s = Math.min(el.clientWidth / 1920, el.clientHeight / 1080)
+      setScale(s)
+    }
     upd()
     const ro = new ResizeObserver(upd)
     ro.observe(el)
     return () => ro.disconnect()
   }, [])
 
-  const update = (patch: Partial<typeof speakerSettings>) => {
+  const DEFAULT_BAR: SpeakerBarSettings = { x: 960, y: 105, scaleX: 552.2, scaleY: 60.69 }
+  const bar = speakerSettings.bar ?? DEFAULT_BAR
+
+  const updateLayer = (key: 'title' | 'speaker' | 'location', patch: Partial<LottieTextLayer>) => {
+    const next = { ...speakerSettings, [key]: { ...speakerSettings[key], ...patch } }
+    setSpeakerSettings(next)
+    pushSpeakerSettings(next)
+  }
+
+  const updateBar = (patch: Partial<SpeakerBarSettings>) => {
+    const next = { ...speakerSettings, bar: { ...bar, ...patch } }
+    setSpeakerSettings(next)
+    pushSpeakerSettings(next)
+  }
+
+  const updateSpeakerLogo = (patch: { logoX?: number; logoY?: number }) => {
     const next = { ...speakerSettings, ...patch }
     setSpeakerSettings(next)
     pushSpeakerSettings(next)
   }
 
-  const obsUrl = profile?.org_id
-    ? `${window.location.origin}/output/screen/speaker?org=${profile.org_id}`
-    : `${window.location.origin}/output/screen/speaker`
-
-  const copyObs = () => {
-    navigator.clipboard.writeText(obsUrl)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 1800)
-  }
+  const layer = activeTab !== 'bar' && activeTab !== 'logo' ? speakerSettings[activeTab] : null
 
   const { width: rpWidth, onMouseDown: rpDrag } = usePanelResize(264, 'shofar-speaker-rp-width')
 
   return (
     <div className="lt-page-v2">
       <div className="lt-left-v2">
-        <div className="lt-preview-area-v2">
-          <div ref={containerRef} style={{ position: 'relative', width: '100%', paddingTop: `${(1080 / 1920) * 100}%`, background: '#f4f4f4', borderRadius: 8, overflow: 'hidden' }}>
-            <div style={{ position: 'absolute', inset: 0 }}>
-              <div style={{ transform: `scale(${scale})`, transformOrigin: 'top left', width: 1920, height: 1080 }}>
-                <SpeakerLottie settings={speakerSettings} />
-              </div>
+        <div className="lt-preview-area-v2" ref={canvasAreaRef} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#09090F', overflow: 'hidden' }}>
+          <div style={{ position: 'relative', width: 1920 * scale, height: 1080 * scale, overflow: 'hidden', borderRadius: 4, flexShrink: 0 }}>
+            <div style={{ position: 'absolute', top: 0, left: 0, width: 1920, height: 1080, transform: `scale(${scale})`, transformOrigin: 'top left' }}>
+              <SpeakerLottie settings={speakerSettings} />
             </div>
           </div>
         </div>
 
-        <div className="ctrl-anim-row" style={{ gap: 8 }}>
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, background: 'var(--surf2)', borderRadius: 8, padding: '8px 12px', overflow: 'hidden' }}>
-            <span className="msym" style={{ fontSize: 15, color: 'var(--accent)', flexShrink: 0 }}>cast</span>
-            <code style={{ fontSize: 11, color: 'var(--text-3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{obsUrl}</code>
+      </div>
+
+      <PanelDragHandle onMouseDown={rpDrag} />
+
+      <div className="lt-right-v2" style={{ width: rpWidth }}>
+        <div style={{ display: 'flex', flexDirection: 'column', overflowY: 'auto', flex: 1 }}>
+          <PillTabs tabs={SPEAKER_TABS} active={activeTab} onChange={k => setActiveTab(k as 'title' | 'speaker' | 'location' | 'bar' | 'logo')} />
+          {activeTab === 'logo' ? (
+            <>
+              <Section title="Position" />
+              <SliderRow label="X" min={-1920} max={1920} value={speakerSettings.logoX ?? 0} onChange={v => updateSpeakerLogo({ logoX: v })} />
+              <SliderRow label="Y" min={-1080} max={1080} value={speakerSettings.logoY ?? 0} onChange={v => updateSpeakerLogo({ logoY: v })} />
+            </>
+          ) : activeTab === 'bar' ? (
+            <>
+              <Section title="Position" />
+              <SliderRow label="X" min={0} max={1920} value={bar.x} onChange={v => updateBar({ x: v })} />
+              <SliderRow label="Y" min={0} max={1080} value={bar.y} onChange={v => updateBar({ y: v })} />
+              <Section title="Size" />
+              <SliderRow label="Width" min={0} max={1200} value={bar.scaleX} onChange={v => updateBar({ scaleX: v })} />
+              <SliderRow label="Height" min={1} max={300} value={bar.scaleY} onChange={v => updateBar({ scaleY: v })} />
+            </>
+          ) : layer ? (
+            <>
+              <Section title="Content" />
+              <TextareaRow label="Text" value={layer.text} onChange={v => updateLayer(activeTab as 'title' | 'speaker' | 'location', { text: v })} />
+              <Section title="Typography" />
+              <FontRow label="Font" value={layer.fontFamily ?? ''} onChange={v => updateLayer(activeTab as 'title' | 'speaker' | 'location', { fontFamily: v })} />
+              <WeightRow label="Weight" value={layer.fontWeight ?? 400} onChange={v => updateLayer(activeTab as 'title' | 'speaker' | 'location', { fontWeight: v })} />
+              <SliderRow label="Size" min={8} max={300} value={layer.size} onChange={v => updateLayer(activeTab as 'title' | 'speaker' | 'location', { size: v })} />
+              <SliderRow label="Spacing" min={-5} max={30} value={layer.letterSpacing ?? 0} onChange={v => updateLayer(activeTab as 'title' | 'speaker' | 'location', { letterSpacing: v })} />
+              <ColorRow label="Colour" value={layer.color} onChange={v => updateLayer(activeTab as 'title' | 'speaker' | 'location', { color: v })} />
+              <ToggleRow label="All caps" value={layer.uppercase ?? false} onChange={v => updateLayer(activeTab as 'title' | 'speaker' | 'location', { uppercase: v })} />
+              <Section title="Position" />
+              <SliderRow label="X" min={0} max={1900} value={layer.x ?? 0} onChange={v => updateLayer(activeTab as 'title' | 'speaker' | 'location', { x: v })} />
+              <SliderRow label="Y" min={0} max={1070} value={layer.y ?? 0} onChange={v => updateLayer(activeTab as 'title' | 'speaker' | 'location', { y: v })} />
+            </>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Slide Page ────────────────────────────────────────────────────────────────
+
+const SLIDE_TABS = [
+  { key: 'title',   label: 'Title' },
+  { key: 'speaker', label: 'Speaker' },
+  { key: 'date',    label: 'Date' },
+  { key: 'bar',     label: 'Bar' },
+  { key: 'logo',    label: 'Logo' },
+]
+
+const DEFAULT_SLIDE_BAR: SpeakerBarSettings = { x: 960, y: 175, scaleX: 552.2, scaleY: 60.69 }
+
+function SlidePage() {
+  const { slideSettings, setSlideSettings, pushSlideSettings } = useControl()
+  const canvasAreaRef = useRef<HTMLDivElement>(null)
+  const [scale, setScale] = useState(0.5)
+  const [activeTab, setActiveTab] = useState<'title' | 'speaker' | 'date' | 'bar' | 'logo'>('title')
+
+  useEffect(() => {
+    const el = canvasAreaRef.current
+    if (!el) return
+    const upd = () => {
+      const s = Math.min(el.clientWidth / 1920, el.clientHeight / 1080)
+      setScale(s)
+    }
+    upd()
+    const ro = new ResizeObserver(upd)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
+  const bar = slideSettings.bar ?? DEFAULT_SLIDE_BAR
+
+  const updateLayer = (key: 'title' | 'speaker' | 'date', patch: Partial<LottieTextLayer>) => {
+    const next = { ...slideSettings, [key]: { ...slideSettings[key], ...patch } } as SlideSettings
+    setSlideSettings(next)
+    pushSlideSettings(next)
+  }
+
+  const updateBar = (patch: Partial<SpeakerBarSettings>) => {
+    const next = { ...slideSettings, bar: { ...bar, ...patch } }
+    setSlideSettings(next)
+    pushSlideSettings(next)
+  }
+
+  const updateSlideLogo = (patch: { logoX?: number; logoY?: number }) => {
+    const next = { ...slideSettings, ...patch }
+    setSlideSettings(next)
+    pushSlideSettings(next)
+  }
+
+  const layer = activeTab !== 'bar' && activeTab !== 'logo' ? slideSettings[activeTab as 'title' | 'speaker' | 'date'] : null
+
+  const { width: rpWidth, onMouseDown: rpDrag } = usePanelResize(264, 'shofar-slide-rp-width')
+
+  return (
+    <div className="lt-page-v2">
+      <div className="lt-left-v2">
+        <div className="lt-preview-area-v2" ref={canvasAreaRef} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#09090F', overflow: 'hidden' }}>
+          <div style={{ position: 'relative', width: 1920 * scale, height: 1080 * scale, overflow: 'hidden', borderRadius: 4, flexShrink: 0 }}>
+            <div style={{ position: 'absolute', top: 0, left: 0, width: 1920, height: 1080, transform: `scale(${scale})`, transformOrigin: 'top left' }}>
+              <SlideLottie settings={slideSettings} />
+            </div>
           </div>
-          <button className="lt-push-live-btn" style={{ flexShrink: 0, width: 'auto', padding: '0 16px' }} onClick={copyObs}>
-            <span className="msym" style={{ fontSize: 15 }}>{copied ? 'check' : 'content_copy'}</span>
-            {copied ? 'Copied!' : 'Copy OBS URL'}
-          </button>
         </div>
       </div>
 
@@ -415,46 +521,38 @@ function SpeakerPage() {
 
       <div className="lt-right-v2" style={{ width: rpWidth }}>
         <div style={{ display: 'flex', flexDirection: 'column', overflowY: 'auto', flex: 1 }}>
-
-          <button className="rp-accordion-hd open">Title / Event</button>
-          <div className="rp-accordion-body">
-            <div className="rp-row">
-              <span className="rp-label">Text</span>
-              <div className="rp-control">
-                <input className="rp-input" style={{ flex: 1 }}
-                  value={speakerSettings.title}
-                  onChange={e => update({ title: e.target.value })}
-                  placeholder="STAFF DEVOTION" />
-              </div>
-            </div>
-          </div>
-
-          <button className="rp-accordion-hd open">Speaker Name</button>
-          <div className="rp-accordion-body">
-            <div className="rp-row">
-              <span className="rp-label">Name</span>
-              <div className="rp-control">
-                <input className="rp-input" style={{ flex: 1 }}
-                  value={speakerSettings.speaker}
-                  onChange={e => update({ speaker: e.target.value })}
-                  placeholder="PHILLIP BOSHOFF" />
-              </div>
-            </div>
-          </div>
-
-          <button className="rp-accordion-hd open">Location / Church</button>
-          <div className="rp-accordion-body">
-            <div className="rp-row">
-              <span className="rp-label">Text</span>
-              <div className="rp-control">
-                <input className="rp-input" style={{ flex: 1 }}
-                  value={speakerSettings.location}
-                  onChange={e => update({ location: e.target.value })}
-                  placeholder="- SOMERSET WEST '26" />
-              </div>
-            </div>
-          </div>
-
+          <PillTabs tabs={SLIDE_TABS} active={activeTab} onChange={k => setActiveTab(k as 'title' | 'speaker' | 'date' | 'bar' | 'logo')} />
+          {activeTab === 'logo' ? (
+            <>
+              <Section title="Position" />
+              <SliderRow label="X" min={-1920} max={1920} value={slideSettings.logoX ?? 0} onChange={v => updateSlideLogo({ logoX: v })} />
+              <SliderRow label="Y" min={-1080} max={1080} value={slideSettings.logoY ?? 0} onChange={v => updateSlideLogo({ logoY: v })} />
+            </>
+          ) : activeTab === 'bar' ? (
+            <>
+              <Section title="Position" />
+              <SliderRow label="X" min={0} max={1920} value={bar.x} onChange={v => updateBar({ x: v })} />
+              <SliderRow label="Y" min={0} max={1080} value={bar.y} onChange={v => updateBar({ y: v })} />
+              <Section title="Size" />
+              <SliderRow label="Width" min={0} max={1200} value={bar.scaleX} onChange={v => updateBar({ scaleX: v })} />
+              <SliderRow label="Height" min={1} max={300} value={bar.scaleY} onChange={v => updateBar({ scaleY: v })} />
+            </>
+          ) : layer ? (
+            <>
+              <Section title="Content" />
+              <TextareaRow label="Text" value={layer.text} onChange={v => updateLayer(activeTab as 'title' | 'speaker' | 'date', { text: v })} />
+              <Section title="Typography" />
+              <FontRow label="Font" value={layer.fontFamily ?? ''} onChange={v => updateLayer(activeTab as 'title' | 'speaker' | 'date', { fontFamily: v })} />
+              <WeightRow label="Weight" value={layer.fontWeight ?? 400} onChange={v => updateLayer(activeTab as 'title' | 'speaker' | 'date', { fontWeight: v })} />
+              <SliderRow label="Size" min={8} max={300} value={layer.size} onChange={v => updateLayer(activeTab as 'title' | 'speaker' | 'date', { size: v })} />
+              <SliderRow label="Spacing" min={-5} max={30} value={layer.letterSpacing ?? 0} onChange={v => updateLayer(activeTab as 'title' | 'speaker' | 'date', { letterSpacing: v })} />
+              <ColorRow label="Colour" value={layer.color} onChange={v => updateLayer(activeTab as 'title' | 'speaker' | 'date', { color: v })} />
+              <ToggleRow label="All caps" value={layer.uppercase ?? false} onChange={v => updateLayer(activeTab as 'title' | 'speaker' | 'date', { uppercase: v })} />
+              <Section title="Position" />
+              <SliderRow label="X" min={0} max={1900} value={layer.x ?? 0} onChange={v => updateLayer(activeTab as 'title' | 'speaker' | 'date', { x: v })} />
+              <SliderRow label="Y" min={0} max={1070} value={layer.y ?? 0} onChange={v => updateLayer(activeTab as 'title' | 'speaker' | 'date', { y: v })} />
+            </>
+          ) : null}
         </div>
       </div>
     </div>
@@ -769,8 +867,10 @@ function OBSPage() {
     ...savedPresets.map(p => ({ label: p.name, url: src(`/output/screen/${p.id}`), w: 1920 * scale, h: 1080 * scale })),
   ]
   const overlaySources = [
-    { label: 'Lower Third', url: src('/output/lower-third'), w: 1920 * scale, h: 1080 * scale },
-    { label: 'Ticker',      url: src('/output/ticker'),      w: 1920 * scale, h: 1080 * scale },
+    { label: 'Slide W/Pastor', url: src('/output/screen/speaker'), w: 1920 * scale, h: 1080 * scale },
+    { label: 'Slide',          url: src('/output/screen/slide'),   w: 1920 * scale, h: 1080 * scale },
+    { label: 'Lower Third',    url: src('/output/lower-third'),    w: 1920 * scale, h: 1080 * scale },
+    { label: 'Ticker',         url: src('/output/ticker'),         w: 1920 * scale, h: 1080 * scale },
   ]
   const sources = [...screenSources, ...overlaySources]
 
@@ -875,12 +975,13 @@ VITE_SUPABASE_ANON_KEY=your-anon-key`}</code>
 // ── Top Bar ───────────────────────────────────────────────────────────────────
 
 const NAV_ITEMS: { id: ModuleId; label: string; icon: string }[] = [
-  { id: 'screens',      label: 'Screens',       icon: 'tv'             },
-  { id: 'speaker',      label: 'Slide W/Pastor', icon: 'person_play'   },
-  { id: 'lowerthird',   label: 'Lower Third',   icon: 'subtitles'      },
-  { id: 'ticker',       label: 'Ticker',        icon: 'rss_feed'       },
-  { id: 'health',       label: 'OBS Sources',   icon: 'cast'           },
-  { id: 'streamhealth', label: 'Stream Health', icon: 'monitor_heart'  },
+  { id: 'screens',      label: 'Screens',        icon: 'tv'             },
+  { id: 'speaker',      label: 'Slide W/Pastor',  icon: 'person_play'   },
+  { id: 'slide',        label: 'Slide',           icon: 'slideshow'      },
+  { id: 'lowerthird',   label: 'Lower Third',    icon: 'subtitles'      },
+  { id: 'ticker',       label: 'Ticker',         icon: 'rss_feed'       },
+  { id: 'health',       label: 'OBS Sources',    icon: 'cast'           },
+  { id: 'streamhealth', label: 'Stream Health',  icon: 'monitor_heart'  },
 ]
 
 function TopBar({ theme, onThemeToggle }: { theme: 'dark' | 'light'; onThemeToggle: () => void }) {
@@ -1123,17 +1224,20 @@ function ControlInner() {
       <div className="app-body">
         <SideNav onModChange={resetToGallery} onEditProfile={() => setProfileOpen(true)} theme={theme} onThemeToggle={() => setTheme(t => t === 'dark' ? 'light' : 'dark')} />
         <div className="app-content">
-          {curMod === 'screens' && !inEditor && (
-            <ScreensGallery
-              onEdit={(id, isNew) => { setEditScreen(id); setIsNewScreen(!!isNew) }}
-            />
-          )}
-          {inEditor && <ScreensEditor onBack={resetToGallery} initialPresetId={editScreen as string | null} isNew={isNewScreen} />}
-          {curMod === 'speaker'      && <SpeakerPage />}
-          {curMod === 'lowerthird'   && <LowerThirdPage />}
-          {curMod === 'ticker'       && <TickerPage />}
-          {curMod === 'health'       && <OBSPage />}
-          {curMod === 'streamhealth' && <div className="embedded-health"><StreamHealth /></div>}
+          <div key={`${curMod}-${inEditor ? 'editor' : 'page'}`} className="page-fade">
+            {curMod === 'screens' && !inEditor && (
+              <ScreensGallery
+                onEdit={(id, isNew) => { setEditScreen(id); setIsNewScreen(!!isNew) }}
+              />
+            )}
+            {inEditor && <ScreensEditor onBack={resetToGallery} initialPresetId={editScreen as string | null} isNew={isNewScreen} />}
+            {curMod === 'speaker'      && <SpeakerPage />}
+            {curMod === 'slide'        && <SlidePage />}
+            {curMod === 'lowerthird'   && <LowerThirdPage />}
+            {curMod === 'ticker'       && <TickerPage />}
+            {curMod === 'health'       && <OBSPage />}
+            {curMod === 'streamhealth' && <div className="embedded-health"><StreamHealth /></div>}
+          </div>
         </div>
       </div>
       <StatusBar />

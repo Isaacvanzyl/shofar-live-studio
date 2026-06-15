@@ -4,6 +4,7 @@ import type { AnimationItem } from 'lottie-web'
 import type { LottieSettings, LottieTextLayer } from '../types'
 import animationData from '../assets/Welcome.json'
 import shofarLogo from '../assets/ShofarLogo_SonWhite.png'
+import logoData from '../assets/Logo.json'
 
 // Background instance only — text, orange bar, and circle are hidden
 function patchBackground(): object {
@@ -44,6 +45,32 @@ interface Props {
 export default function WelcomeLottie({ settings, staticFrame }: Props) {
   const bgRef = useRef<HTMLDivElement>(null)
   const bgAnimRef = useRef<AnimationItem | null>(null)
+  const logoRef = useRef<HTMLDivElement>(null)
+  const logoAnimRef = useRef<AnimationItem | null>(null)
+
+  useEffect(() => {
+    logoAnimRef.current?.destroy()
+    const isLive = staticFrame == null
+    let fired = false
+    const logoAnim = lottie.loadAnimation({
+      container: logoRef.current!,
+      renderer: 'svg',
+      loop: isLive,
+      autoplay: false,
+      animationData: JSON.parse(JSON.stringify(logoData)),
+    })
+    logoAnim.setSubframe(false)
+    const onReady = () => {
+      if (fired) return
+      fired = true
+      if (staticFrame != null) logoAnim.goToAndStop(staticFrame, true)
+      else { logoAnim.goToAndStop(350, true); logoAnim.play() }
+    }
+    logoAnim.addEventListener('DOMLoaded', onReady)
+    if (!fired && logoAnim.isLoaded) onReady()
+    logoAnimRef.current = logoAnim
+    return () => { logoAnimRef.current?.destroy() }
+  }, [staticFrame])
 
   useEffect(() => {
     bgAnimRef.current?.destroy()
@@ -121,6 +148,9 @@ export default function WelcomeLottie({ settings, staticFrame }: Props) {
       {logoTr && (
         <img src={logoTr.src} alt="" style={{ position: 'absolute', left: logoTr.x, top: logoTr.y, width: logoTr.w, height: logoTr.h, objectFit: 'contain', pointerEvents: 'none' }} />
       )}
+
+      {/* Logo overlay */}
+      <div ref={logoRef} style={{ position: 'absolute', inset: 0, pointerEvents: 'none', transform: `translate(${settings.logoX ?? 0}px, ${settings.logoY ?? 0}px)` }} />
     </div>
   )
 }

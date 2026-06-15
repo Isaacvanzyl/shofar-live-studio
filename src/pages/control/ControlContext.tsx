@@ -17,6 +17,7 @@ import type {
   ThemeState,
   LottieSettings,
   SpeakerSettings,
+  SlideSettings,
 } from '../../types'
 import { setState as setSupabaseState, getState as getSupabaseState } from '../../lib/supabase'
 
@@ -88,9 +89,46 @@ export const DEFAULT_LOTTIE_SETTINGS: LottieSettings = {
 }
 
 export const DEFAULT_SPEAKER_SETTINGS: SpeakerSettings = {
-  title:    'STAFF DEVOTION',
-  speaker:  'PHILLIP BOSHOFF',
-  location: "- SOMERSET WEST '26",
+  title: {
+    text: 'STAFF DEVOTION',
+    size: 100,
+    color: '#1a1a1a',
+    fontFamily: 'TG Bold Condensed',
+    fontWeight: 700,
+    uppercase: true,
+    letterSpacing: 2,
+    x: 200,
+    y: 55,
+  },
+  speaker: {
+    text: 'PHILLIP BOSHOFF',
+    size: 36,
+    color: '#1a1a1a',
+    fontFamily: 'TG Bold',
+    fontWeight: 700,
+    uppercase: true,
+    letterSpacing: 1,
+    x: 1600,
+    y: 55,
+  },
+  location: {
+    text: "- SOMERSET WEST '26",
+    size: 30,
+    color: '#1a1a1a',
+    fontFamily: 'TG Regular',
+    fontWeight: 400,
+    uppercase: false,
+    x: 51,
+    y: 1042,
+  },
+  bar: { x: 960, y: 105, scaleX: 552.2, scaleY: 60.69 },
+}
+
+export const DEFAULT_SLIDE_SETTINGS: SlideSettings = {
+  title:   { text: 'STAFF DEVOTION', size: 120, color: '#3d3d3d', fontFamily: 'TG Bold Condensed', fontWeight: 700, uppercase: true,  x: 960,  y: 50   },
+  speaker: { text: 'PHILLIP BOSHOFF', size: 35,  color: '#3d3d3d', fontFamily: 'TG Bold',           fontWeight: 700, uppercase: true,  x: 75,   y: 1045 },
+  date:    { text: '22 March, 2021',  size: 35,  color: '#3d3d3d', fontFamily: 'TG Bold',           fontWeight: 700, uppercase: false, x: 1837, y: 85   },
+  bar:     { x: 960, y: 175, scaleX: 552.2, scaleY: 60.69 },
 }
 
 // ── Context type ─────────────────────────────────────────────────────────────
@@ -134,6 +172,9 @@ interface ControlContextType {
   speakerSettings: SpeakerSettings
   setSpeakerSettings: (s: SpeakerSettings) => void
   pushSpeakerSettings: (s: SpeakerSettings) => Promise<void>
+  slideSettings: SlideSettings
+  setSlideSettings: (s: SlideSettings) => void
+  pushSlideSettings: (s: SlideSettings) => Promise<void>
   setScale: (s: number) => void
   setGridOn: (v: boolean) => void
   showToast: (msg: string) => void
@@ -167,6 +208,7 @@ export function ControlProvider({ children, orgId }: { children: ReactNode; orgI
   const [themeState, setThemeState] = useState<ThemeState>(DEFAULT_THEME_STATE)
   const [lottieSettings, setLottieSettings] = useState<LottieSettings>(DEFAULT_LOTTIE_SETTINGS)
   const [speakerSettings, setSpeakerSettings] = useState<SpeakerSettings>(DEFAULT_SPEAKER_SETTINGS)
+  const [slideSettings, setSlideSettings] = useState<SlideSettings>(DEFAULT_SLIDE_SETTINGS)
   const [scale, setScale] = useState(1)
   const [gridOn, setGridOn] = useState(false)
   const [ltTimerDuration, setLtTimerDuration] = useState<number | null>(null)
@@ -180,7 +222,15 @@ export function ControlProvider({ children, orgId }: { children: ReactNode; orgI
       if (data) setLottieSettings(data as LottieSettings)
     }).catch(() => {})
     getSupabaseState(ck('speaker_slide')).then(data => {
-      if (data) setSpeakerSettings(data as SpeakerSettings)
+      // Guard against old plain-string format (title was a string before LottieTextLayer migration)
+      if (data && typeof (data as SpeakerSettings).title === 'object') {
+        setSpeakerSettings(data as SpeakerSettings)
+      }
+    }).catch(() => {})
+    getSupabaseState(ck('slide')).then(data => {
+      if (data && typeof (data as SlideSettings).title === 'object') {
+        setSlideSettings(data as SlideSettings)
+      }
     }).catch(() => {})
   }, [])
 
@@ -319,6 +369,15 @@ export function ControlProvider({ children, orgId }: { children: ReactNode; orgI
     []
   )
 
+  const pushSlideSettings = useCallback(
+    async (s: SlideSettings) => {
+      setSlideSettings(s)
+      const { error } = await setSupabaseState(ck('slide'), s)
+      if (error) console.error('[Supabase] slide push failed:', error)
+    },
+    []
+  )
+
   const pushScreenPreset = useCallback(
     async (id: string, s: LottieSettings) => {
       const { error } = await setSupabaseState(ck(`screen_${id}`), s)
@@ -420,6 +479,7 @@ ${elHtml}${tickerHtml}
     setThemeState, pushThemeState,
     lottieSettings, setLottieSettings, pushLottieSettings, pushScreenPreset,
     speakerSettings, setSpeakerSettings, pushSpeakerSettings,
+    slideSettings, setSlideSettings, pushSlideSettings,
     setScale, setGridOn,
     showToast, buildExport,
     ltTimerDuration, setLtTimerDuration,
