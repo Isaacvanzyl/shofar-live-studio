@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Convert OG Image</title>
+  <style>
+    body { margin: 0; background: #111; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; font-family: Arial, sans-serif; color: white; gap: 20px; }
+    button { padding: 14px 32px; background: #E84F0E; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer; }
+    button:hover { background: #c43d08; }
+    p { color: rgba(255,255,255,0.5); font-size: 13px; }
+  </style>
+</head>
+<body>
+  <p>Click the button to download og-image.png</p>
+  <button onclick="convert()">Download og-image.png</button>
+  <canvas id="c" style="display:none"></canvas>
+  <script>
+    function convert() {
+      const canvas = document.getElementById('c')
+      canvas.width = 1200
+      canvas.height = 630
+      const ctx = canvas.getContext('2d')
+      const img = new Image()
+      img.onload = () => {
+        ctx.drawImage(img, 0, 0, 1200, 630)
+        const a = document.createElement('a')
+        a.download = 'og-image.png'
+        a.href = canvas.toDataURL('image/png')
+        a.click()
+      }
+      img.src = '/og-image.svg'
+    }
+  </script>
+</body>
+</html>
