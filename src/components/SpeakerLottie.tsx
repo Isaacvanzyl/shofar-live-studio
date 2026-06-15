@@ -28,7 +28,7 @@ function buildData(settings: SpeakerSettings): object {
     if (layer) {
       delete layer.parent
       const pk = (layer.ks as Record<string, unknown>).p as { a: number; k: number[] }
-      pk.a = 0; pk.k = [960, 58, 0]
+      pk.a = 0; pk.k = [960, 105, 0]
     }
   }
   return data
