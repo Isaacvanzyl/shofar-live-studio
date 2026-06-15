@@ -15,10 +15,13 @@ function patchTextLayer(layers: unknown[], name: string, text: string) {
 }
 
 function buildData(settings: SpeakerSettings): object {
-  const data = JSON.parse(JSON.stringify(animationData)) as { layers: unknown[] }
+  const data = JSON.parse(JSON.stringify(animationData)) as { layers: Record<string, unknown>[] }
   patchTextLayer(data.layers, 'Staff Devotion',      settings.title)
   patchTextLayer(data.layers, 'Phillip Boshoff',     settings.speaker)
   patchTextLayer(data.layers, "- Somerset West '26", settings.location)
+  // Hide the decorative circle element in the bottom-right corner
+  const circle = data.layers.find(l => l.nm === 'Circle Elem 6')
+  if (circle) (circle.ks as Record<string, unknown>).o = { a: 0, k: 0 }
   return data
 }
 
