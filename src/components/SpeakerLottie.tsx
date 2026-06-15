@@ -3,6 +3,7 @@ import lottie from 'lottie-web'
 import type { AnimationItem } from 'lottie-web'
 import type { SpeakerSettings } from '../types'
 import animationData from '../assets/SpeakerSlide.json'
+import shofarLogo from '../assets/shofar-logo.svg'
 
 // Patch text content into a named text layer (ty=5) in the Lottie data
 function patchTextLayer(layers: unknown[], name: string, text: string) {
@@ -15,7 +16,10 @@ function patchTextLayer(layers: unknown[], name: string, text: string) {
 }
 
 function buildData(settings: SpeakerSettings): object {
-  const data = JSON.parse(JSON.stringify(animationData)) as { layers: Record<string, unknown>[] }
+  const data = JSON.parse(JSON.stringify(animationData)) as { layers: Record<string, unknown>[]; assets: Record<string, unknown>[] }
+  // Swap embedded logo with the local SVG asset
+  const imgAsset = data.assets?.find((a: Record<string, unknown>) => a.id === 'image_0')
+  if (imgAsset) { imgAsset.u = ''; imgAsset.p = shofarLogo }
   patchTextLayer(data.layers, 'Staff Devotion',      settings.title)
   patchTextLayer(data.layers, 'Phillip Boshoff',     settings.speaker)
   patchTextLayer(data.layers, "- Somerset West '26", settings.location)
