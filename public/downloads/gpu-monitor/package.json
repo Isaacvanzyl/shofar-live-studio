@@ -1,0 +1,9 @@
+{
+  "name": "shofar-gpu-monitor",
+  "version": "1.0.0",
+  "description": "GPU stats monitor for Shofar Hub",
+  "main": "gpu-monitor.js",
+  "dependencies": {
+    "systeminformation": "^5.0.0"
+  }
+}
