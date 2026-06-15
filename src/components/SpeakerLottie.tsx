@@ -17,9 +17,12 @@ function patchTextLayer(layers: unknown[], name: string, text: string) {
 
 function buildData(settings: SpeakerSettings): object {
   const data = JSON.parse(JSON.stringify(animationData)) as { layers: Record<string, unknown>[]; assets: Record<string, unknown>[] }
-  // Swap embedded logo with the local SVG asset
-  const imgAsset = data.assets?.find((a: Record<string, unknown>) => a.id === 'image_0')
-  if (imgAsset) { imgAsset.u = ''; imgAsset.p = shofarLogo }
+  // Hide the top-left logo box and logo layers
+  for (const nm of ['LogoRect', 'LogoRect 2', '_Logo Holder']) {
+    for (const layer of data.layers.filter(l => l.nm === nm)) {
+      (layer.ks as Record<string, unknown>).o = { a: 0, k: 0 }
+    }
+  }
   patchTextLayer(data.layers, 'Staff Devotion',      settings.title)
   patchTextLayer(data.layers, 'Phillip Boshoff',     settings.speaker)
   patchTextLayer(data.layers, "- Somerset West '26", settings.location)
