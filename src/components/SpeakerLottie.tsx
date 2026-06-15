@@ -22,13 +22,14 @@ function buildData(settings: SpeakerSettings): object {
   // Hide the decorative circle element in the bottom-right corner
   const circle = data.layers.find(l => l.nm === 'Circle Elem 6')
   if (circle) (circle.ks as Record<string, unknown>).o = { a: 0, k: 0 }
-  // Centre the TXT_LINE bar horizontally, between top of canvas and screen area
-  // Remove the parent null and set an absolute world position directly
-  const txtLine = data.layers.find(l => l.nm === 'TXT_LINE') as Record<string, unknown> | undefined
-  if (txtLine) {
-    delete txtLine.parent
-    const pk = (txtLine.ks as Record<string, unknown>).p as { a: number; k: number[] }
-    pk.a = 0; pk.k = [960, 58, 0]
+  // Centre the TXT_LINE bar and Staff Devotion text between top of canvas and screen area
+  for (const nm of ['TXT_LINE', 'Staff Devotion']) {
+    const layer = data.layers.find(l => l.nm === nm) as Record<string, unknown> | undefined
+    if (layer) {
+      delete layer.parent
+      const pk = (layer.ks as Record<string, unknown>).p as { a: number; k: number[] }
+      pk.a = 0; pk.k = [960, 58, 0]
+    }
   }
   return data
 }
