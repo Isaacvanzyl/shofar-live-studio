@@ -9,7 +9,6 @@ import StreamHealth from './pages/stream-health/index'
 import LoginPage from './pages/login/index'
 import AdminPage from './pages/admin/index'
 import GoogleCallback from './pages/auth/GoogleCallback'
-import CalendarPage from './pages/calendar/CalendarPage'
 
 function ScreenOutputDynamic() {
   const { screenId } = useParams<{ screenId: string }>()
@@ -56,9 +55,6 @@ function AppRoutes() {
 
       {/* Google OAuth callback */}
       <Route path="/auth/google/callback" element={<GoogleCallback />} />
-
-      {/* Private calendar — no auth, password-gated */}
-      <Route path="/CalendarBookings" element={<CalendarPage />} />
 
       {/* Output pages — no auth required (OBS browser sources) */}
       <Route path="/output/welcome" element={<ScreenOutput screen="welcome" />} />
