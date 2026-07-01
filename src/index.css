@@ -5,7 +5,10 @@
 /* ── Intro splash screen ──────────────────────────────── */
 .intro-overlay {
   position: fixed;
-  inset: 0;
+  top: 0; left: 0; right: 0; bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh; /* covers mobile chrome address bar */
   z-index: 9999;
   background: linear-gradient(145deg, #0D1117 0%, #161D28 40%, #1a1410 100%);
   display: flex;
@@ -35,6 +38,12 @@
   z-index: 1;
   width: min(60vw, 60vh);
   height: min(60vw, 60vh);
+}
+@media (max-width: 768px) {
+  .intro-lottie {
+    width: min(72vw, 72dvh);
+    height: min(72vw, 72dvh);
+  }
 }
 
 /* ── Trade Gothic font family ─────────────────────────── */
