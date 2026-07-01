@@ -36,13 +36,13 @@
 .intro-lottie {
   position: relative;
   z-index: 1;
-  width: min(60vw, 60vh);
-  height: min(60vw, 60vh);
+  width: min(59vw, 59vh);
+  height: min(59vw, 59vh);
 }
 @media (max-width: 768px) {
   .intro-lottie {
-    width: min(72vw, 72dvh);
-    height: min(72vw, 72dvh);
+    width: min(71vw, 71dvh);
+    height: min(71vw, 71dvh);
   }
 }
 
