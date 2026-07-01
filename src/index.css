@@ -2,6 +2,41 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Intro splash screen ──────────────────────────────── */
+.intro-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: linear-gradient(145deg, #0D1117 0%, #161D28 40%, #1a1410 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transition: opacity 0.9s ease;
+}
+.intro-overlay--fade { opacity: 0; pointer-events: none; }
+.intro-orb {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.intro-orb-1 {
+  width: 700px; height: 700px;
+  background: radial-gradient(circle, rgba(232,79,14,0.13) 0%, transparent 70%);
+  top: -250px; right: -150px;
+}
+.intro-orb-2 {
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, rgba(232,79,14,0.08) 0%, transparent 70%);
+  bottom: -150px; left: -150px;
+}
+.intro-lottie {
+  position: relative;
+  z-index: 1;
+  width: min(60vw, 60vh);
+  height: min(60vw, 60vh);
+}
+
 /* ── Trade Gothic font family ─────────────────────────── */
 @font-face { font-family: 'TG Regular';                   src: url('/fonts/Trade-Gothic-Regular.otf'); }
 @font-face { font-family: 'TG Oblique';                   src: url('/fonts/Trade-Gothic-Oblique.otf'); }

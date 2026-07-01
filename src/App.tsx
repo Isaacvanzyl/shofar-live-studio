@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate, useParams, useNavigate } from 'react-router-dom'
 import { useEffect, type ReactNode } from 'react'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
+import IntroScreen from './components/IntroScreen'
 import ControlPage from './pages/control/index'
 import ScreenOutput from './pages/output/ScreenOutput'
 import LowerThirdOutput from './pages/output/LowerThirdOutput'
@@ -69,6 +70,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <IntroScreen />
         <AppRoutes />
       </AuthProvider>
     </BrowserRouter>
